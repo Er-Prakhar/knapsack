@@ -17,14 +17,20 @@ greedy_knapsack <- function(x, W) {
 
   i <- 1
 
-  while(weight <= W) {
+  n <- nrow(x)
+
+  while(weight <= W & i <= n) {
 
     weight <- weight + x$w[i]
     i <- i+1
 
   }
 
-  i <- i-2
+  if(i > n & weight <= W)
+    i <- i-1
+
+  else
+    i <- i-2
 
   value <- round(sum(x$v[1:i]))
 

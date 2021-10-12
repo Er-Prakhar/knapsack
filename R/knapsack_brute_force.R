@@ -10,32 +10,65 @@ brute_force_knapsack <- function(x, W, parallel = FALSE) {
 
   n <- nrow(x)
 
-  comb <- matrix(nrow = 2^n-1, ncol = n)
+  if(parallel) {
 
-  for(i in 1:2^n-1) {
-    comb[i,] <- as.integer(head(intToBits(i), n))
+    cl <- makeCluster(detectCores())
+
+    comb <- parLapply(cl, 1:2^n-1, function(x) {
+      as.integer(head(intToBits(x), n))
+      })
+
+    weight <- parSapply(cl, comb, function(x) {
+      sum(x$w[as.logical(x)])
+    })
+
+    comb <- comb[weight <= W]
+
+    value <- parSapply(cl, comb, function(x) {
+      sum(x$v[as.logical(x)])
+    })
+
+    i <- which.max[value]
+
+    value <- round(value[i])
+
+    elements <- as.integer(rownames(x[as.logical(comb[[i]]),]))
+
+    return(list(value = value, elements = elements))
+
   }
 
-  weight <- 0
+  else {
 
-  for(i in 1:2^n-1) {
-    weight[i] <- sum(x$w[as.logical(comb[i,])])
+    comb <- matrix(nrow = 2^n-1, ncol = n)
+
+    for(i in 1:2^n-1) {
+      comb[i,] <- as.integer(head(intToBits(i), n))
+    }
+
+    weight <- 0
+
+    for(i in 1:2^n-1) {
+      weight[i] <- sum(x$w[as.logical(comb[i,])])
+    }
+
+    comb <- comb[weight <= W,]
+
+    value <- 0
+
+    for(i in 1:nrow(comb)) {
+      value[i] <- sum(x$v[as.logical(comb[i,])])
+    }
+
+    i <- which.max(value)
+
+    value <- round(value[i])
+
+    elements <- as.integer(rownames(x[as.logical(comb[i,]),]))
+
+    return(list(value = value, elements = elements))
+
   }
 
-  comb <- comb[weight <= W,]
-
-  value <- 0
-
-  for(i in 1:nrow(comb)) {
-    value[i] <- sum(x$v[as.logical(comb[i,])])
-  }
-
-  i <- which.max(value)
-
-  value <- round(value[i])
-
-  elements <- as.integer(rownames(x[as.logical(comb[i,]),]))
-
-  return(list(value = value, elements = elements))
 
 }
